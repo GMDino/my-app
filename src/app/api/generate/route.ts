@@ -1,3 +1,4 @@
+// app/api/generate/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
@@ -9,26 +10,26 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = `
-You are an AI that outputs professional bios and resumes. Given a name and job/org, generate a brief profile.
+Generate a professional bio for the following person:
 
 Name: ${name}
-Job/Org: ${job}
+Job/Organization: ${job}
 
-Format:
-- Full Name
-- Professional Summary
-- Notable Experience
-- Education (if public)
-- LinkedIn/public links (if found)
+Bio:
 `
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: prompt }]
+            }
+          ]
         }),
       }
     )
