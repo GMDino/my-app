@@ -17,6 +17,8 @@ export default function Home() {
     e.preventDefault()
     setLoading(true)
     setResult('')
+    
+    console.log('Generating for:', { name, job })
 
     try {
       const res = await fetch('/api/generate', {
@@ -28,14 +30,19 @@ export default function Home() {
       if (!res.ok) {
         const errText = await res.text()
         console.error('Generate API error:', res.status, errText)
-        setResult('Failed to generate resume. Please try again.')
+        setResult(`Error ${res.status}: ${errText || 'Failed to generate resume.'}`)
       } else {
         const data = await res.json()
-        setResult(data.output)
+        if (!data.output) {
+          console.warn('No output from API:', data)
+          setResult('No information found.')
+        } else {
+          setResult(data.output)
+        }
       }
     } catch (err) {
       console.error('Generate API exception:', err)
-      setResult('An error occurred. Please try again.')
+      setResult('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -48,7 +55,6 @@ export default function Home() {
 
     if (!email) return
 
-    // Check for existing email
     const { data: existing } = await supabase
       .from('email_signups')
       .select('id')
@@ -67,7 +73,7 @@ export default function Home() {
     if (!insertError) {
       setEmail('')
       setEmailSubmitted(true)
-      fetchSignupCount() // update total count after signup
+      fetchSignupCount()
     } else {
       setEmailError('Something went wrong. Try again later.')
       console.error(insertError)
@@ -79,9 +85,7 @@ export default function Home() {
       .from('email_signups')
       .select('*', { count: 'exact', head: true })
 
-    if (!error && typeof count === 'number') {
-      setTotalSignups(count)
-    }
+    if (!error && typeof count === 'number') setTotalSignups(count)
   }
 
   useEffect(() => {
@@ -141,13 +145,9 @@ export default function Home() {
         </button>
 
         {emailSubmitted && (
-          <p className="text-green-600 text-sm mt-1">
-            Thanks! You&rsquo;re on the list.
-          </p>
+          <p className="text-green-600 text-sm mt-1">Thanks! You&rsquo;re on the list.</p>
         )}
-        {emailError && (
-          <p className="text-red-600 text-sm mt-1">{emailError}</p>
-        )}
+        {emailError && <p className="text-red-600 text-sm mt-1">{emailError}</p>}
       </form>
 
       {/* Total signups */}

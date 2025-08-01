@@ -1,14 +1,12 @@
-// File: /src/app/api/generate/route.ts
+// app/api/generate/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-
-export const runtime = 'edge' // Optional: Use 'nodejs' if Gemini API requires it
 
 export async function POST(req: NextRequest) {
   try {
     const { name, job } = await req.json()
 
     if (!name || !job) {
-      return NextResponse.json({ error: 'Missing name or job' }, { status: 400 })
+      return NextResponse.json({ output: null, error: 'Missing fields' }, { status: 400 })
     }
 
     const prompt = `
@@ -23,21 +21,29 @@ Format:
 - Notable Experience
 - Education (if public)
 - LinkedIn/public links (if found)
-    `
+`
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      }),
-    })
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      }
+    )
 
-    const data = await response.json()
+    const data = await geminiRes.json()
+    const output = data?.candidates?.[0]?.content?.parts?.[0]?.text || null
 
-    const output = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No information found.'
+    if (!output) {
+      console.error('Gemini returned no valid output:', JSON.stringify(data, null, 2))
+    }
+
     return NextResponse.json({ output })
   } catch (err) {
-    return NextResponse.json({ error: 'Internal Server Error', detail: String(err) }, { status: 500 })
+    console.error('Error in /api/generate route:', err)
+    return NextResponse.json({ output: null }, { status: 500 })
   }
 }
