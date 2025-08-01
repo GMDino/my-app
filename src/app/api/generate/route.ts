@@ -12,7 +12,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'Missing name or job' }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
 
     const result = await model.generateContent({
       contents: [
@@ -20,7 +20,7 @@ export async function POST(req: Request): Promise<NextResponse> {
           role: 'user',
           parts: [
             {
-              text: `Find and create a list of the professional and educational background of ${name}, who currently has a job at ${job}. These facts should be grounded in publicly available Google Search insights and results. Compile into a list, make it concise and easy to read. Ensure dates are accurate too. Do not bold or style any of the text except you can use a bulleted or numbered list.`,
+              text: `You are a search engine similar to google, but for presenting professional and educational resumes of people. Find and create a list of the professional and educational background of ${name}, who currently has a job at ${job}. These facts should be grounded in publicly available Google Search insights and results and so they are public information. Compile into a list, make it concise and easy to read. Ensure dates are accurate too. Do not bold or style any of the text except you can use a bulleted or numbered list.`,
             },
           ],
         },
