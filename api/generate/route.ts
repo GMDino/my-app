@@ -27,6 +27,6 @@ Format:
   })
 
   const data = await geminiRes.json()
-  const output = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No information found.'
+  const output = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No information found."
   return NextResponse.json({ output })
 }
