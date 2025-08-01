@@ -34,7 +34,7 @@ export default function Home() {
     if (!email) return
 
     // Check for existing email
-    const { data: existing, error: findError } = await supabase
+    const { data: existing } = await supabase
       .from('email_signups')
       .select('id')
       .eq('email', email)
@@ -120,7 +120,7 @@ export default function Home() {
         </button>
 
         {emailSubmitted && (
-          <p className="text-green-600 text-sm mt-1">Thanks! You're on the list.</p>
+          <p className="text-green-600 text-sm mt-1">Thanks! You are on the list.</p>
         )}
         {emailError && (
           <p className="text-red-600 text-sm mt-1">{emailError}</p>
