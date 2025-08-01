@@ -1,4 +1,3 @@
-// app/api/generate/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
@@ -24,7 +23,7 @@ Format:
 `
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,6 +34,8 @@ Format:
     )
 
     const data = await geminiRes.json()
+    console.log('Gemini API response:', JSON.stringify(data, null, 2))
+
     const output = data?.candidates?.[0]?.content?.parts?.[0]?.text || null
 
     if (!output) {
