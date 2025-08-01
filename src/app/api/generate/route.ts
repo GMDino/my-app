@@ -20,7 +20,7 @@ export async function POST(req: Request): Promise<NextResponse> {
           role: 'user',
           parts: [
             {
-              text: `Find 5 resume bullet points for someone named ${name} applying to a job as a ${job}. Provide examples grounded in publicly available Google Search insights and results.`,
+              text: `Find and create a list of the professional and educational background of ${name}, who currently has a job at ${job}. These facts should be grounded in publicly available Google Search insights and results. Compile into a list, make it concise and easy to read. Ensure dates are accurate too.`,
             },
           ],
         },
