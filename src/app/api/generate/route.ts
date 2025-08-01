@@ -12,7 +12,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'Missing name or job' }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const result = await model.generateContent({
       contents: [
