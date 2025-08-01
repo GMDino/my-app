@@ -1,5 +1,10 @@
 // app/api/generate/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+} from '@google/generative-ai'
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = `
-Generate a professional bio for the following person:
+You are an AI that outputs professional bios and resumes. Given a name and job/org, generate a brief profile that is in a list format. Include all educational background and previous and current positions. Ensure accurate dates are included too. 
 
 Name: ${name}
 Job/Organization: ${job}
@@ -18,34 +23,45 @@ Job/Organization: ${job}
 Bio:
 `
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }]
-            }
-          ]
-        }),
-      }
-    )
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
-    const data = await geminiRes.json()
-    console.log('Gemini API response:', JSON.stringify(data, null, 2))
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        topP: 1,
+        maxOutputTokens: 2048
+      },
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+        }
+      ]
+    })
 
-    const output = data?.candidates?.[0]?.content?.parts?.[0]?.text || null
+    const text = await result.response.text()
 
-    if (!output) {
-      console.error('Gemini returned no valid output:', JSON.stringify(data, null, 2))
+    return NextResponse.json({ output: text })
+  } catch (err: any) {
+    console.error('Error in /api/generate route:', err)
+
+    if (err.status === 429 || err?.response?.status === 429) {
+      return NextResponse.json(
+        {
+          output: null,
+          error: 'You’ve hit the API rate limit. Please wait and try again later.'
+        },
+        { status: 429 }
+      )
     }
 
-    return NextResponse.json({ output })
-  } catch (err) {
-    console.error('Error in /api/generate route:', err)
-    return NextResponse.json({ output: null }, { status: 500 })
+    return NextResponse.json({ output: null, error: 'Internal server error' }, { status: 500 })
   }
 }
