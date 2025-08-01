@@ -16,14 +16,29 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const res = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, job }),
-    })
-    const data = await res.json()
-    setResult(data.output)
-    setLoading(false)
+    setResult('')
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, job }),
+      })
+
+      if (!res.ok) {
+        const errText = await res.text()
+        console.error('Generate API error:', res.status, errText)
+        setResult('Failed to generate resume. Please try again.')
+      } else {
+        const data = await res.json()
+        setResult(data.output)
+      }
+    } catch (err) {
+      console.error('Generate API exception:', err)
+      setResult('An error occurred. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -93,14 +108,20 @@ export default function Home() {
           onChange={(e) => setJob(e.target.value)}
           required
         />
-        <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+          type="submit"
+          disabled={loading}
+        >
           {loading ? 'Searching...' : 'Generate Resume'}
         </button>
       </form>
 
       {/* Resume result */}
       {result && (
-        <div className="mt-6 p-4 border rounded bg-gray-50 whitespace-pre-line">{result}</div>
+        <div className="mt-6 p-4 border rounded bg-gray-50 whitespace-pre-line">
+          {result}
+        </div>
       )}
 
       {/* Email Signup */}
@@ -120,7 +141,9 @@ export default function Home() {
         </button>
 
         {emailSubmitted && (
-          <p className="text-green-600 text-sm mt-1">Thanks! You are on the list.</p>
+          <p className="text-green-600 text-sm mt-1">
+            Thanks! You&rsquo;re on the list.
+          </p>
         )}
         {emailError && (
           <p className="text-red-600 text-sm mt-1">{emailError}</p>
