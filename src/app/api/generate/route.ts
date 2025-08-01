@@ -1,67 +1,61 @@
-// app/api/generate/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import {
-  GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
-} from '@google/generative-ai'
+import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
+import { NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+export async function POST(req: Request): Promise<NextResponse> {
   try {
-    const { name, job } = await req.json()
+    const body = await req.json();
+    const { name, job } = body;
 
     if (!name || !job) {
-      return NextResponse.json({ output: null, error: 'Missing fields' }, { status: 400 })
+      return NextResponse.json({ error: 'Missing name or job' }, { status: 400 });
     }
 
-    const prompt = `
-You are an AI that outputs professional bios and resumes. Given a name and job/org, generate a brief profile that is in a list format. Include all educational background and previous and current positions. Ensure accurate dates are included too. 
-
-Name: ${name}
-Job/Organization: ${job}
-
-Bio:
-`
-
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const result = await model.generateContent({
       contents: [
         {
           role: 'user',
-          parts: [{ text: prompt }]
-        }
+          parts: [
+            {
+              text: `Find 5 resume bullet points for someone named ${name} applying to a job as a ${job}. Provide examples grounded in publicly available Google Search insights and results.`,
+            },
+          ],
+        },
       ],
       generationConfig: {
         temperature: 0.7,
-        topP: 1,
-        maxOutputTokens: 2048
+        topP: 0.9,
+        maxOutputTokens: 1024,
       },
       safetySettings: [
         {
           category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-          threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
-        }
-      ]
-    })
-
-    const text = await result.response.text()
-
-    return NextResponse.json({ output: text })
-  } catch (err: any) {
-    console.error('Error in /api/generate route:', err)
-
-    if (err.status === 429 || err?.response?.status === 429) {
-      return NextResponse.json(
-        {
-          output: null,
-          error: 'You’ve hit the API rate limit. Please wait and try again later.'
+          threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
         },
-        { status: 429 }
-      )
-    }
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+        },
+      ],
+    });
 
-    return NextResponse.json({ output: null, error: 'Internal server error' }, { status: 500 })
+    const response = result.response;
+    const text = response.text();
+
+    return NextResponse.json({ output: text });
+  } catch (error: unknown) {
+    console.error('Error in /api/generate route:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
