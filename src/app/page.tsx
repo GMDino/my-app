@@ -38,7 +38,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-6 flex items-center justify-center">
       <main className="bg-white/90 backdrop-blur-md shadow-xl rounded-2xl p-8 w-full max-w-xl">
         <h1 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">
-          Dinassyl's General Resume Finder
+          Dinassyl General Resume Finder
         </h1>
 
         {/* Resume form */}
