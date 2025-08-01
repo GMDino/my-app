@@ -1,15 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { useState } from 'react'
 
 export default function Home() {
   const [name, setName] = useState('')
   const [job, setJob] = useState('')
-  const [email, setEmail] = useState('')
-  const [emailSubmitted, setEmailSubmitted] = useState(false)
-  const [emailError, setEmailError] = useState('')
-  const [totalSignups, setTotalSignups] = useState<number | null>(null)
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -17,7 +12,7 @@ export default function Home() {
     e.preventDefault()
     setLoading(true)
     setResult('')
-    
+
     console.log('Generating for:', { name, job })
 
     try {
@@ -47,50 +42,6 @@ export default function Home() {
       setLoading(false)
     }
   }
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setEmailError('')
-    setEmailSubmitted(false)
-
-    if (!email) return
-
-    const { data: existing } = await supabase
-      .from('email_signups')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle()
-
-    if (existing) {
-      setEmailError('This email is already signed up.')
-      return
-    }
-
-    const { error: insertError } = await supabase
-      .from('email_signups')
-      .insert({ email })
-
-    if (!insertError) {
-      setEmail('')
-      setEmailSubmitted(true)
-      fetchSignupCount()
-    } else {
-      setEmailError('Something went wrong. Try again later.')
-      console.error(insertError)
-    }
-  }
-
-  const fetchSignupCount = async () => {
-    const { count, error } = await supabase
-      .from('email_signups')
-      .select('*', { count: 'exact', head: true })
-
-    if (!error && typeof count === 'number') setTotalSignups(count)
-  }
-
-  useEffect(() => {
-    fetchSignupCount()
-  }, [])
 
   return (
     <main className="p-6 max-w-xl mx-auto">
@@ -126,35 +77,6 @@ export default function Home() {
         <div className="mt-6 p-4 border rounded bg-gray-50 whitespace-pre-line">
           {result}
         </div>
-      )}
-
-      {/* Email Signup */}
-      <form onSubmit={handleEmailSubmit} className="mt-10 space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Optional: Sign up with your email
-        </label>
-        <input
-          type="email"
-          className="w-full border px-4 py-2"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <button className="bg-gray-800 text-white px-4 py-2 rounded" type="submit">
-          Submit Email
-        </button>
-
-        {emailSubmitted && (
-          <p className="text-green-600 text-sm mt-1">Thanks! You&rsquo;re on the list.</p>
-        )}
-        {emailError && <p className="text-red-600 text-sm mt-1">{emailError}</p>}
-      </form>
-
-      {/* Total signups */}
-      {totalSignups !== null && (
-        <p className="text-sm text-gray-600 mt-4">
-          Total signups so far: <strong>{totalSignups}</strong>
-        </p>
       )}
     </main>
   )
